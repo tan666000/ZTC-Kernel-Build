@@ -91,25 +91,52 @@ jobs:
           echo "Creating folder for configuration: $CONFIG..."
           mkdir -p "$CONFIG"
           cd "$CONFIG"
-          # Initialize and sync kernel source
-          echo "Initializing and syncing kernel source..."
-          FORMATTED_BRANCH="android12-5.10-2025-12"
-          $REPO init --depth=1 --u https://android.googlesource.com/kernel/manifest -b common-${FORMATTED_BRANCH}
+  
+          # 初始化repo使用2025-12分支
+          echo "Initializing repo with android12-5.10-2025-12 branch..."
           $REPO init --depth=1 --u https://android.googlesource.com/kernel/manifest -b common-android12-5.10-2025-12
-          # Sync repo and apply patches
+  
+          # 删除kernel/common条目，准备替换
           sed -i '/name="kernel\/common"/d' .repo/manifests/default.xml
+  
+          # 显示repo版本
           $REPO --version
+  
+          # 同步repo
+          echo "Syncing repo..."
           $REPO --trace sync -c -j$(nproc --all)
+  
+          # 删除官方common目录
           rm -rf common
-          git clone https://github.com/ztc1997/android_gki_kernel_5.10_common.git -b android12-5.10-2025-12 --depth=1 common      
+  
+          # 克隆你的fork版本
+          echo "Cloning ztc1997 kernel fork..."
+          git clone https://github.com/ztc1997/android_gki_kernel_5.10_common.git --recurse-submodules --depth=1 common
+  
+          # 下载并配置编译器
+          echo "Downloading and configuring clang compiler..."
           curl -LSs "https://github.com/zzh20188/ZTC-Kenel-Build/releases/download/clang/clang-r563880.tar.gz" -o clang-r563880.tar.gz
-          mkdir prebuilts-master/clang/host/linux-x86/clang-r563880
+  
+          # 创建编译器目录
+          mkdir -p prebuilts-master/clang/host/linux-x86/clang-r563880
+  
+          # 解压编译器
+          echo "Extracting clang..."
           tar -xzvf clang-r563880.tar.gz -C prebuilts-master/clang/host/linux-x86/clang-r563880
-          # ln -s "$(pwd)/clang/clang-r563880" "$(pwd)/prebuilts-master/clang/host/linux-x86/clang-r563880"
+  
+          # 进入内核目录
           cd common
+  
+          # 修改编译器路径配置
+          echo "Updating build config with clang path..."
           sed -i 's|^CLANG_PREBUILT_BIN=.*|CLANG_PREBUILT_BIN=prebuilts-master/clang/host/linux-x86/clang-r563880/bin|' build.config.common
-          
-
+  
+          # 可选：显示当前目录和配置
+          echo "Current directory: $(pwd)"
+          echo "Build config content:"
+          grep CLANG_PREBUILT_BIN build.config.common
+  
+          echo "Setup complete! Ready to build kernel."
       - name: 获取 KSU & SUSFS 版本
         run: |
           echo "This is the KSU variant"
