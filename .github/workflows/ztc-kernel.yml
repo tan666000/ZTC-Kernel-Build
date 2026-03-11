@@ -93,7 +93,7 @@ jobs:
           cd "$CONFIG"
           # Initialize and sync kernel source
           echo "Initializing and syncing kernel source..."
-          FORMATTED_BRANCH="android12-5.10-lts"
+          FORMATTED_BRANCH="android12-5.10-249"
           $REPO init --depth=1 --u https://android.googlesource.com/kernel/manifest -b common-${FORMATTED_BRANCH}
           REMOTE_BRANCH=$(git ls-remote https://android.googlesource.com/kernel/common ${FORMATTED_BRANCH})
           # Sync repo and apply patches
