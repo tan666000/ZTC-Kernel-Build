@@ -285,7 +285,9 @@ jobs:
             set -e
             set -x
             cd "$CONFIG"
-
+            # 更可靠的方式
+            sed -i 's/struct dentry \*dentry;/struct dentry *__maybe_unused dentry;/' fs/proc/task_mmu.c
+            sed -i 's/^bypass:$/\/\/ bypass:/' fs/proc/task_mmu.c
             echo "Building the kernel..."
             LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh CC=clang || exit 1
             
