@@ -88,27 +88,35 @@ jobs:
 
       - name: 初始化和同步内核源代码
         run: |
-          echo "Creating folder for configuration: $CONFIG..."
-          mkdir -p "$CONFIG"
-          cd "$CONFIG"
-          # Initialize and sync kernel source
-          echo "Initializing and syncing kernel source..."
-          FORMATTED_BRANCH="android12-5.10-lts"
-          $REPO init --depth=1 --u https://android.googlesource.com/kernel/manifest -b common-${FORMATTED_BRANCH}
-          REMOTE_BRANCH=$(git ls-remote https://android.googlesource.com/kernel/common ${FORMATTED_BRANCH})
-          # Sync repo and apply patches
-          sed -i '/name="kernel\/common"/d' .repo/manifests/default.xml
-          $REPO --version
-          $REPO --trace sync -c -j$(nproc --all)
-          rm -rf common
-          git clone https://github.com/ztc1997/android_gki_kernel_5.10_common.git --recurse-submodules --depth=1 common      
-          curl -LSs "https://github.com/zzh20188/ZTC-Kenel-Build/releases/download/clang/clang-r563880.tar.gz" -o clang-r563880.tar.gz
-          mkdir prebuilts-master/clang/host/linux-x86/clang-r563880
-          tar -xzvf clang-r563880.tar.gz -C prebuilts-master/clang/host/linux-x86/clang-r563880
-          # ln -s "$(pwd)/clang/clang-r563880" "$(pwd)/prebuilts-master/clang/host/linux-x86/clang-r563880"
-          cd common
-          sed -i 's|^CLANG_PREBUILT_BIN=.*|CLANG_PREBUILT_BIN=prebuilts-master/clang/host/linux-x86/clang-r563880/bin|' build.config.common
-          
+           echo "Creating folder for configuration: $CONFIG..."
+           mkdir -p "$CONFIG"
+           cd "$CONFIG"
+
+           # Initialize and sync kernel source
+           echo "Initializing and syncing kernel source..."
+           FORMATTED_BRANCH="android12-5.10-lts"
+           $REPO init --depth=1 --u https://android.googlesource.com/kernel/manifest -b common-${FORMATTED_BRANCH}
+           REMOTE_BRANCH=$(git ls-remote https://android.googlesource.com/kernel/common ${FORMATTED_BRANCH})
+           
+           # Sync repo and apply patches
+           sed -i '/name="kernel\/common"/d' .repo/manifests/default.xml
+           $REPO --version
+           $REPO --trace sync -c -j$(nproc --all)
+           rm -rf common
+
+           # 克隆 Star-ZER0 的内核仓库并切换到指定 commit
+           git clone https://github.com/Star-ZER0/android_gki_kernel_5.10_common.git common
+           cd common
+           git checkout 990dd017c9fdc82d903d72f94cdd87b64863c726
+           git submodule update --init --recursive --depth=1
+           cd ..
+
+           curl -LSs "https://github.com/zzh20188/ZTC-Kenel-Build/releases/download/clang/clang-r563880.tar.gz" -o clang-r563880.tar.gz
+           mkdir -p prebuilts-master/clang/host/linux-x86/clang-r563880
+           tar -xzvf clang-r563880.tar.gz -C prebuilts-master/clang/host/linux-x86/clang-r563880
+           
+           cd common
+           sed -i 's|^CLANG_PREBUILT_BIN=.*|CLANG_PREBUILT_BIN=prebuilts-master/clang/host/linux-x86/clang-r563880/bin|' build.config.common
 
       - name: 获取 KSU & SUSFS 版本
         run: |
